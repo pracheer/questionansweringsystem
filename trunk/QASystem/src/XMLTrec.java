@@ -1,0 +1,135 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderFactory;
+
+
+public class XMLTrec extends DefaultHandler{
+
+	private static final String QID = "qid";
+	private static final String RANK = "rank";
+	private static final String SCORE = "score";
+
+	private static final String DOC = "DOC";
+	
+	/**
+	 * converts TREC SGML file into an xml file which can be parsed later on.
+	 * @param inputFile
+	 * @param outputXML
+	 */
+	public static void convertToXML(File inputFile, File outputXML) {
+		try {
+			BufferedReader reader  = new BufferedReader(new FileReader(inputFile));
+			BufferedWriter writer = new BufferedWriter(new FileWriter(outputXML));
+			String str;
+			writer.write("<ROOT>");
+			int qid = -1;
+			int rank = -1;
+			float score = -1;
+			while((str=reader.readLine())!=null) {
+				if(str.startsWith(QID)) {
+					String[] split = str.split("\t");
+					for (String string : split) {
+						String[] split2 = string.split(": ");
+						if(split2[0].equalsIgnoreCase(QID))
+							qid = Integer.parseInt(split2[1]);
+						else if(split2[0].equalsIgnoreCase(RANK))
+							rank = Integer.parseInt(split2[1]);
+						else if(split2[0].equalsIgnoreCase(SCORE))
+							score = Float.parseFloat(split2[1]);
+					}
+				}
+				else {
+					if(str.startsWith("<DOC>")) {
+						writer.write("<DOC "+
+								QID + qid + " " +
+								RANK + rank + " " +
+								SCORE + score +
+								">" + "\n");
+					}
+					else
+						writer.write(str + "\n");
+				}
+			}
+			writer.write("</ROOT>");
+			writer.flush();
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * parses the xmlFile and returns the list of documents in ranked order.
+	 * @param xmlFile
+	 * @return
+	 */
+	public static ArrayList<Document> parse(File xmlFile) {
+		try {
+			XMLTrec obj = new XMLTrec();
+			XMLReader xmlr = XMLReaderFactory.createXMLReader();
+			xmlr.setContentHandler(obj);
+			xmlr.setErrorHandler(obj);
+
+			// Parse the intermediate XML file.
+			xmlr.parse(new InputSource(new FileReader(xmlFile)));
+			return obj.documents;
+			
+		} catch (SAXException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	ArrayList<Document> documents;
+	Document doc;
+	String startEle;
+	@Override
+	public void startElement(String uri, String localName, String qName,
+			Attributes attributes) throws SAXException {
+		super.startElement(uri, localName, qName, attributes);
+
+		if(qName.equalsIgnoreCase("ROOT"))
+			documents = new ArrayList<Document>();
+		else if(qName.equalsIgnoreCase(DOC)) {
+			Integer qid = Integer.parseInt(attributes.getValue(QID));
+			Integer rank = Integer.parseInt(attributes.getValue(RANK));
+			Float score = Float.parseFloat(attributes.getValue(SCORE));
+			doc = new Document(qid, rank, score);
+		}
+		else 
+			startEle = qName;
+	}
+
+	@Override
+	public void characters(char[] ch, int start, int length)
+	throws SAXException {
+		String line = new String(ch, start, length);
+		doc.addString(startEle, line);
+	}
+
+	@Override
+	public void endElement(String uri, String localName, String qName)
+	throws SAXException {
+
+		super.endElement(uri, localName, qName);
+		if(qName.equalsIgnoreCase(DOC)) {
+			documents.add(doc);
+		}
+	}
+}
