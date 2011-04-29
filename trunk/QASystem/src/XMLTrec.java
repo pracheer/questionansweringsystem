@@ -33,12 +33,18 @@ public class XMLTrec extends DefaultHandler{
 			BufferedReader reader  = new BufferedReader(new FileReader(inputFile));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(outputXML));
 			String str;
-			writer.write("<ROOT>");
+			writer.write("<ROOT>\n");
 			int qid = -1;
 			int rank = -1;
 			float score = -1;
 			while((str=reader.readLine())!=null) {
-				if(str.startsWith(QID)) {
+				
+				str = str.trim();
+				
+				if(str.isEmpty())
+					continue;
+				
+				if(str.length()>=3 && str.substring(0, 3).equalsIgnoreCase(QID)) {
 					String[] split = str.split("\t");
 					for (String string : split) {
 						String[] split2 = string.split(": ");
@@ -53,10 +59,14 @@ public class XMLTrec extends DefaultHandler{
 				else {
 					if(str.startsWith("<DOC>")) {
 						writer.write("<DOC "+
-								QID + qid + " " +
-								RANK + rank + " " +
-								SCORE + score +
+								QID + "=\"" + qid + "\" " +
+								RANK + "=\"" + rank + "\" " +
+								SCORE + "=\"" + score + "\"" +
 								">" + "\n");
+					}
+					else if(str.startsWith("<F P")) {
+						int indexOf = str.indexOf(">");
+						writer.write("<F P=\""+ str.substring(5, indexOf) +"\"" + str.substring(indexOf) + "\n");
 					}
 					else
 						writer.write(str + "\n");
@@ -120,6 +130,9 @@ public class XMLTrec extends DefaultHandler{
 	public void characters(char[] ch, int start, int length)
 	throws SAXException {
 		String line = new String(ch, start, length);
+		if(line.isEmpty() || line.equals("\n")) 
+			return;
+		
 		doc.addString(startEle, line);
 	}
 
