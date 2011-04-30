@@ -39,6 +39,15 @@ public class XMLTrec extends DefaultHandler{
 			float score = -1;
 			while((str=reader.readLine())!=null) {
 				
+				str = str.replaceAll("&Ggr;", "");
+				str = str.replaceAll("&rsqb;", "");
+				str = str.replaceAll("& ", "&amp; ");
+				str = str.replaceAll("&$", "&amp;");
+				str = str.replaceAll("&plus;", "+");
+				str = str.replaceAll("&yen;", " Yen ");
+				str = str.replaceAll("&pound;", " Pound ");
+				str = str.replaceAll("&equals;", "=");
+				str = str.replaceAll("&lsqb;", "");
 				str = str.trim();
 				
 				if(str.isEmpty())
@@ -64,12 +73,10 @@ public class XMLTrec extends DefaultHandler{
 								SCORE + "=\"" + score + "\"" +
 								">" + "\n");
 					}
-					else if(str.startsWith("<F P")) {
-						int indexOf = str.indexOf(">");
-						writer.write("<F P=\""+ str.substring(5, indexOf) +"\"" + str.substring(indexOf) + "\n");
-					}
-					else
+					else {
+						str = str.replaceAll("<(\\w+) (\\w+)=([\\w\\-]+)>", "<$1 $2=\"$3\">");
 						writer.write(str + "\n");
+					}
 				}
 			}
 			writer.write("</ROOT>");
@@ -94,6 +101,7 @@ public class XMLTrec extends DefaultHandler{
 			xmlr.setContentHandler(obj);
 			xmlr.setErrorHandler(obj);
 
+			System.out.println("starting parsing throught file " + xmlFile);
 			// Parse the intermediate XML file.
 			xmlr.parse(new InputSource(new FileReader(xmlFile)));
 			return obj.documents;

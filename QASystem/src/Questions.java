@@ -3,19 +3,21 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
 
 
 public class Questions {
 
-	HashMap<Integer, String> questions;
+	HashMap<Integer, Question> questions;
 	
 	public Questions() {
-		questions = new HashMap<Integer, String>();
+		questions = new HashMap<Integer, Question>();
 	}
 	
-	public void addQuestion(Integer qid, String question) {
+	public void addQuestion(Integer qid, String queStr) {
+		Question question = new Question(qid, queStr.toLowerCase());
 		questions.put(qid, question);
 	}
 	
@@ -27,7 +29,7 @@ public class Questions {
 		return questions.keySet();
 	}
 	
-	public String getQuestion(int qid) {
+	public Question getQuestion(int qid) {
 		return questions.get(qid);
 	}
 	
@@ -66,6 +68,10 @@ public class Questions {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public Collection<Question> getQuestions() {
+		return questions.values();
 	}
 
 }
