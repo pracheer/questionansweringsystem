@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -16,35 +17,41 @@ import com.thoughtworks.xstream.XStream;
 
 public class Baseline extends DefaultHandler{
 
+	public static Properties properties;
+	private static File propertiesFile = new File("data/QA.properties");
 	private static final String SEPARATOR = " ";
 	private static final String TOP_DOCS = "top_docs.";
-	static File topDocsDir = new File("D:/study/natural language processing/Assignments/QASystem/DATA_201-399/topdocs_201-399/top_docs");
-	static File outputDir = new File(topDocsDir.getParentFile() + File.separator + "output");
-	static boolean learn = false;
-	static File questionsFile = new File("D:/study/natural language processing/Assignments/QASystem/questions.txt");
-	static File answersFile = new File("D:/study/natural language processing/Assignments/QASystem/output.txt");
-	static boolean overwrite = false;
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		try {
-			XStream xstream = new XStream();
+			
+			properties = new Properties();
+			properties.load(new FileReader(propertiesFile));
+			File topDocsDir = new File(properties.getProperty("topDocsDir"));
+			File outputDir = new File(properties.getProperty("outputDir"));
+			
+			// to store the map once it has learnt it.
+			File learntFile = new File(properties.getProperty("objectFile"));
+			File questionsFile = new File(properties.getProperty("questionsFile"));
+			File answersFile = new File(properties.getProperty("answersFile"));
+			boolean learn = Boolean.parseBoolean(properties.getProperty("learn"));
+			boolean overwrite = Boolean.parseBoolean(properties.getProperty("overwrite"));
 			
 			// consists of qid and list of all the documents arranged by ranks.
 			HashMap<Integer, ArrayList<Document>> map;
 			
-			// to store the map once it has learnt it.
-			File learntFile = new File("data/object");
-			
+			XStream xstream = new XStream();
 			if (learn) {
-				map = learn();
+				map = learn(overwrite, topDocsDir, outputDir);
 				if(!learntFile.exists())
 					learntFile.createNewFile();
 				xstream.toXML(map, new FileWriter(learntFile));
 				System.err.println("Documents created in memory and saved to a file:"+learntFile);
 			}
 			else {
+				System.out.println(learntFile.getAbsolutePath());
 				map = (HashMap<Integer, ArrayList<Document>>)xstream.fromXML(new FileReader(learntFile));
 				System.err.println("Learnt object retrieved from memory");
 			}
@@ -74,7 +81,7 @@ public class Baseline extends DefaultHandler{
 		}
 
 	}
-	private static HashMap<Integer, ArrayList<Document>> learn() {
+	private static HashMap<Integer, ArrayList<Document>> learn(boolean overwrite, File topDocsDir, File outputDir) {
 		HashMap<Integer, ArrayList<Document>> map;
 		File[] files = topDocsDir.listFiles();
 		map = new HashMap<Integer, ArrayList<Document>>();
