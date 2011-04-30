@@ -7,6 +7,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -48,6 +54,7 @@ public class XMLTrec extends DefaultHandler{
 				str = str.replaceAll("&pound;", " Pound ");
 				str = str.replaceAll("&equals;", "=");
 				str = str.replaceAll("&lsqb;", "");
+				str = str.replaceAll("[^\\s\\w&;-\\[\\]~`\"'\\\\(),/.:!@#$%*=+]","");
 				str = str.trim();
 				
 				if(str.isEmpty())
@@ -67,7 +74,7 @@ public class XMLTrec extends DefaultHandler{
 				}
 				else {
 					if(str.startsWith("<DOC>")) {
-						writer.write("<DOC "+
+						writer.write("<" + DOC + " " +
 								QID + "=\"" + qid + "\" " +
 								RANK + "=\"" + rank + "\" " +
 								SCORE + "=\"" + score + "\"" +
@@ -151,6 +158,47 @@ public class XMLTrec extends DefaultHandler{
 		super.endElement(uri, localName, qName);
 		if(qName.equalsIgnoreCase(DOC)) {
 			documents.add(doc);
+		}
+	}
+
+	/**
+	 * This would dump the document with a given rank from xmlfile to the given rawFile
+	 * @param xmlFile
+	 * @param qid
+	 * @param overwrite 
+	 * @param rank
+	 * @param rawFile
+	 */
+	public static void dumpRawFile(File xmlFile, File rawFileDir, int qid, boolean overwrite) {
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			org.w3c.dom.Document root = db.parse(xmlFile);
+			NodeList docNodeList = root.getElementsByTagName(DOC);
+			for(int i = 0; i < docNodeList.getLength(); i++) {
+				Node docNode = docNodeList.item(i);
+				String rank = docNode.getAttributes().getNamedItem(RANK).getTextContent();
+				File rawFile = new File(rawFileDir, qid + "_" + rank + ".txt");
+				
+				if(rawFile.exists() && !overwrite)
+					continue;
+				
+				BufferedWriter writer = new BufferedWriter(new FileWriter(rawFile));
+				NodeList childNodes = docNode.getChildNodes();
+				for(int c = 0; c < childNodes.getLength(); c++) {
+					Node item = childNodes.item(c);
+					String txt = item.getTextContent();
+					writer.write(txt + "\n");
+				}
+				writer.flush();
+				writer.close();
+			}
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 }
