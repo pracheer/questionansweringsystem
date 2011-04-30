@@ -1,7 +1,11 @@
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,6 +13,10 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinder;
+import opennlp.tools.namefind.TokenNameFinderModel;
 
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -29,7 +37,11 @@ public class Baseline extends DefaultHandler{
 			properties = new Properties();
 			properties.load(new FileReader(propertiesFile));
 			File topDocsDir = new File(properties.getProperty("topDocsDir"));
-			File outputDir = new File(properties.getProperty("outputDir"));
+			File tempDir = new File(properties.getProperty("tempDir"));
+			File rawFileDir = new File(properties.getProperty("rawFileDir"));
+			
+			tempDir.mkdirs();
+			rawFileDir.mkdirs();
 			
 			// to store the map once it has learnt it.
 			File learntFile = new File(properties.getProperty("objectFile"));
@@ -43,7 +55,7 @@ public class Baseline extends DefaultHandler{
 			
 			XStream xstream = new XStream();
 			if (learn) {
-				map = learn(overwrite, topDocsDir, outputDir);
+				map = learn(overwrite, topDocsDir, tempDir, rawFileDir);
 				if(!learntFile.exists())
 					learntFile.createNewFile();
 				xstream.toXML(map, new FileWriter(learntFile));
@@ -55,6 +67,8 @@ public class Baseline extends DefaultHandler{
 				System.err.println("Learnt object retrieved from memory");
 			}
 			
+			runNER(rawFileDir);
+			
 			System.out.println("Model trained/retrieved");
 			
 			System.err.println("Starting to parse Questions File:"+questionsFile);
@@ -65,7 +79,7 @@ public class Baseline extends DefaultHandler{
 			BufferedWriter answer = new BufferedWriter(new FileWriter(answersFile));
 			Collection<Question> quesList = questions.getQuestions();
 			for (Question question : quesList) {
-				Collection<String> solutions = getBaselineAnswer(map, question);
+				Collection<String> solutions = getAnswer(map, question);
 				
 				for (String string : solutions) {
 					answer.write(question.getQid() + /*" "+score + */ " "+ string + "\n");
@@ -78,7 +92,37 @@ public class Baseline extends DefaultHandler{
 		}
 	}
 	
-	private static HashMap<Integer, ArrayList<Document>> learn(boolean overwrite, File topDocsDir, File outputDir) {
+	private static void runNER(File rawFileDir) throws FileNotFoundException {
+		InputStream modelIn = new FileInputStream("data/en-ner-person.bin");
+		try {
+			TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+			NameFinderME nameFinderMe = new NameFinderME(model);
+			File[] files = rawFileDir.listFiles();
+			for (File file : files) {
+				
+			}
+//			nameFinderMe.find();
+			nameFinderMe.clearAdaptiveData();
+		}
+		catch (IOException e) {
+		  e.printStackTrace();
+		}
+		finally {
+		  if (modelIn != null) {
+		    try {
+		      modelIn.close();
+		    }
+		    catch (IOException e) {
+		    }
+		  }
+		}
+	}
+
+	private static Collection<String> getAnswer(HashMap<Integer, ArrayList<Document>> map, Question question) {
+		return getBaselineAnswer(map, question);
+	}
+
+	private static HashMap<Integer, ArrayList<Document>> learn(boolean overwrite, File topDocsDir, File outputDir, File rawFileDir) {
 		HashMap<Integer, ArrayList<Document>> map;
 		File[] files = topDocsDir.listFiles();
 		map = new HashMap<Integer, ArrayList<Document>>();
@@ -88,7 +132,12 @@ public class Baseline extends DefaultHandler{
 			if(!xmlFile.exists() || overwrite)
 				XMLTrec.convertToXML(inputFile, xmlFile);
 			ArrayList<Document> docs = XMLTrec.parse(xmlFile);
-			map.put(docs.get(0).qid, docs);
+			int qid = docs.get(0).qid;
+			map.put(qid, docs);
+			
+			// generate the rawfiles.
+			rawFileDir.mkdirs();
+			XMLTrec.dumpRawFile(xmlFile, rawFileDir, qid, overwrite);
 		}
 		return map;
 	}
@@ -96,8 +145,9 @@ public class Baseline extends DefaultHandler{
 	private static Collection<String> getBaselineAnswer(
 			HashMap<Integer, ArrayList<Document>> map, Question question) {
 		System.out.println("Reading question:"+question.getQid());
-		System.out.println(question);
+		System.out.println(question.getString());
 		ArrayList<Document> docs = map.get(question.getQid());
+
 		// score, answers
 		TreeMap<Float, String> solutions = new TreeMap<Float, String>(Collections.reverseOrder()); 
 		for (Document doc : docs) {

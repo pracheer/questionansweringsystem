@@ -44,6 +44,10 @@ public class Document {
 		return score;
 	}
 
+	public int getRank() {
+		return rank;
+	}
+	
 	public float search(String question, ArrayList<String> ansWords) {
 		float maxScore = -1;
 		HashSet<String> solutionStr = null;
@@ -70,9 +74,6 @@ public class Document {
 
 	private float getOverlapScore(HashSet<String> wordSet, HashSet<String> qWords) {
 		int score = 0;
-		for (String string : wordSet) {
-			System.out.println(string);
-		}
 		for (String qWord : qWords) {
 			if(wordSet.contains(qWord))
 				++score;
