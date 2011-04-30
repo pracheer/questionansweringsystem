@@ -26,7 +26,6 @@ public class Baseline extends DefaultHandler{
 	 */
 	public static void main(String[] args) {
 		try {
-			
 			properties = new Properties();
 			properties.load(new FileReader(propertiesFile));
 			File topDocsDir = new File(properties.getProperty("topDocsDir"));
@@ -51,7 +50,7 @@ public class Baseline extends DefaultHandler{
 				System.err.println("Documents created in memory and saved to a file:"+learntFile);
 			}
 			else {
-				System.out.println(learntFile.getAbsolutePath());
+				System.out.println("opening learnt model from file:" + learntFile.getAbsolutePath());
 				map = (HashMap<Integer, ArrayList<Document>>)xstream.fromXML(new FileReader(learntFile));
 				System.err.println("Learnt object retrieved from memory");
 			}
@@ -66,11 +65,9 @@ public class Baseline extends DefaultHandler{
 			BufferedWriter answer = new BufferedWriter(new FileWriter(answersFile));
 			Collection<Question> quesList = questions.getQuestions();
 			for (Question question : quesList) {
-				TreeMap<Float, String> solutions = getAnswer(map, question);
+				Collection<String> solutions = getBaselineAnswer(map, question);
 				
-				Set<Float> scores = solutions.keySet();
-				for (Float score : scores) {
-					String string = solutions.get(score);
+				for (String string : solutions) {
 					answer.write(question.getQid() + /*" "+score + */ " "+ string + "\n");
 				}
 			}
@@ -79,8 +76,8 @@ public class Baseline extends DefaultHandler{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
+	
 	private static HashMap<Integer, ArrayList<Document>> learn(boolean overwrite, File topDocsDir, File outputDir) {
 		HashMap<Integer, ArrayList<Document>> map;
 		File[] files = topDocsDir.listFiles();
@@ -95,7 +92,8 @@ public class Baseline extends DefaultHandler{
 		}
 		return map;
 	}
-	private static TreeMap<Float, String> getAnswer(
+	
+	private static Collection<String> getBaselineAnswer(
 			HashMap<Integer, ArrayList<Document>> map, Question question) {
 		System.out.println("Reading question:"+question.getQid());
 		System.out.println(question);
@@ -114,7 +112,6 @@ public class Baseline extends DefaultHandler{
 				}
 			}
 		}
-		return solutions;
+		return solutions.values();
 	}
-
 }
