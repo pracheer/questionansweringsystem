@@ -16,10 +16,11 @@ import com.thoughtworks.xstream.XStream;
 
 public class Baseline extends DefaultHandler{
 
-	private static final String SEPARATOR = "::";
+	private static final String SEPARATOR = " ";
+	private static final String TOP_DOCS = "top_docs.";
 	static File topDocsDir = new File("D:/study/natural language processing/Assignments/QASystem/DATA_201-399/topdocs_201-399/top_docs");
 	static File outputDir = new File(topDocsDir.getParentFile() + File.separator + "output");
-	static boolean learn = true;
+	static boolean learn = false;
 	static File questionsFile = new File("D:/study/natural language processing/Assignments/QASystem/questions.txt");
 	static File answersFile = new File("D:/study/natural language processing/Assignments/QASystem/output.txt");
 	static boolean overwrite = false;
@@ -37,16 +38,7 @@ public class Baseline extends DefaultHandler{
 			File learntFile = new File("data/object");
 			
 			if (learn) {
-				File[] files = topDocsDir.listFiles();
-				map = new HashMap<Integer, ArrayList<Document>>();
-				for (File inputFile : files) {
-					File xmlFile = new File(outputDir, inputFile.getName()
-							+ ".xml");
-					if(!xmlFile.exists() || overwrite)
-						XMLTrec.convertToXML(inputFile, xmlFile);
-					ArrayList<Document> docs = XMLTrec.parse(xmlFile);
-					map.put(docs.get(0).qid, docs);
-				}
+				map = learn();
 				if(!learntFile.exists())
 					learntFile.createNewFile();
 				xstream.toXML(map, new FileWriter(learntFile));
@@ -72,7 +64,7 @@ public class Baseline extends DefaultHandler{
 				Set<Float> scores = solutions.keySet();
 				for (Float score : scores) {
 					String string = solutions.get(score);
-					answer.write(question.getQid() + " "+score +" "+ string + "\n");
+					answer.write(question.getQid() + /*" "+score + */ " "+ string + "\n");
 				}
 			}
 			answer.flush();
@@ -81,6 +73,20 @@ public class Baseline extends DefaultHandler{
 			e.printStackTrace();
 		}
 
+	}
+	private static HashMap<Integer, ArrayList<Document>> learn() {
+		HashMap<Integer, ArrayList<Document>> map;
+		File[] files = topDocsDir.listFiles();
+		map = new HashMap<Integer, ArrayList<Document>>();
+		for (File inputFile : files) {
+			File xmlFile = new File(outputDir, inputFile.getName()
+					+ ".xml");
+			if(!xmlFile.exists() || overwrite)
+				XMLTrec.convertToXML(inputFile, xmlFile);
+			ArrayList<Document> docs = XMLTrec.parse(xmlFile);
+			map.put(docs.get(0).qid, docs);
+		}
+		return map;
 	}
 	private static TreeMap<Float, String> getAnswer(
 			HashMap<Integer, ArrayList<Document>> map, Question question) {
@@ -96,7 +102,7 @@ public class Baseline extends DefaultHandler{
 			for(int i = 0; i < ansWords.size(); i++) {
 				strBuf.append(ansWords.get(i) + " ");
 				if(((i%10==0&i>0) || i==ansWords.size()-1) && strBuf.length()>0) {
-					solutions.put((int)doc.score*score*10000, doc.getValue("DOCNO") + SEPARATOR + strBuf.toString());
+					solutions.put((int)doc.score*score*10000, TOP_DOCS+doc.getQid() + SEPARATOR + strBuf.toString().trim());
 					strBuf.setLength(0);
 				}
 			}

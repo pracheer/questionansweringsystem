@@ -10,6 +10,7 @@ public class Document {
 	int rank;
 	float score;
 
+	// Had to make it this complex so that comparing later one becomes easier/faster.
 	// Tag, {sentence1:{word1, word2,..}, sentence2:{...}}
 	HashMap<String, ArrayList<HashSet<String>>> tagMap;
 
@@ -101,6 +102,6 @@ public class Document {
 				buf.append(string2 + " ");
 			}
 		}
-		return buf.toString();
+		return buf.toString().trim();
 	}
 }

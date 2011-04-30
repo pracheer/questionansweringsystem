@@ -1,7 +1,8 @@
 
 public class Question {
-	int qid;
-	String question;
+	private int qid;
+	private String question;
+	
 	public Question(int qid, String question) {
 		super();
 		this.qid = qid;

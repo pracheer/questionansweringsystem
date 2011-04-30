@@ -101,7 +101,7 @@ public class XMLTrec extends DefaultHandler{
 			xmlr.setContentHandler(obj);
 			xmlr.setErrorHandler(obj);
 
-			System.out.println("starting parsing throught file " + xmlFile);
+			System.out.println("starting parsing through file " + xmlFile);
 			// Parse the intermediate XML file.
 			xmlr.parse(new InputSource(new FileReader(xmlFile)));
 			return obj.documents;
