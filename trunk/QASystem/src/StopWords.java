@@ -6,9 +6,9 @@ import java.util.HashSet;
 
 public class StopWords {
   private static String stopWordsFileName_ = "data/stopwords.list";
-  HashSet<String> stopWords_ = new HashSet<String>();
+  public static HashSet<String> stopWords = new HashSet<String>();
 
-  public StopWords(){
+  static {
     try {
 		FileReader fr = new FileReader(stopWordsFileName_);
 		BufferedReader in = new BufferedReader(fr);
@@ -19,7 +19,7 @@ public class StopWords {
 		  sw = in.readLine();
 		  if (sw == null)
 		    break;
-		  stopWords_.add(sw);
+		  stopWords.add(sw);
 		}
 	} catch (FileNotFoundException e) {
 		e.printStackTrace();
@@ -28,7 +28,7 @@ public class StopWords {
 	}
   }
 
-  public boolean isStopWord(String str) {
-    return stopWords_.contains(str);
+  public static boolean isStopWord(String str) {
+    return stopWords.contains(str);
   }
 }
