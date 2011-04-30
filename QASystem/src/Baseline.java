@@ -1,3 +1,4 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,9 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -17,6 +21,7 @@ import java.util.TreeMap;
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinder;
 import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.util.Span;
 
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -67,7 +72,7 @@ public class Baseline extends DefaultHandler{
 				System.err.println("Learnt object retrieved from memory");
 			}
 			
-			runNER(rawFileDir);
+			runNER(map);
 			
 			System.out.println("Model trained/retrieved");
 			
@@ -92,29 +97,66 @@ public class Baseline extends DefaultHandler{
 		}
 	}
 	
-	private static void runNER(File rawFileDir) throws FileNotFoundException {
-		InputStream modelIn = new FileInputStream("data/en-ner-person.bin");
+	private static void runNER(HashMap<Integer,ArrayList<Document>> map) throws FileNotFoundException {
+		String[] models = {
+				"models/en-ner-person.bin", 
+				"models/en-ner-date.bin",
+				"models/en-ner-location.bin",
+				"models/en-ner-money.bin",
+				"models/en-ner-organization.bin",
+				"models/en-ner-percentage.bin",
+				"models/en-ner-time.bin",
+				};
+		runNER(map, models);
+	}
+
+	private static void runNER(HashMap<Integer, ArrayList<Document>> map,
+			String[] modelNames) throws FileNotFoundException {
 		try {
-			TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
-			NameFinderME nameFinderMe = new NameFinderME(model);
-			File[] files = rawFileDir.listFiles();
-			for (File file : files) {
-				
+			ArrayList<NameFinderME> nerModels = new ArrayList<NameFinderME>();
+			for (String modelName : modelNames) {
+				FileInputStream modelIn = new FileInputStream(modelName);
+				TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+				NameFinderME nameFinderMe = new NameFinderME(model);
+				nerModels.add(nameFinderMe);
 			}
-//			nameFinderMe.find();
-			nameFinderMe.clearAdaptiveData();
+			
+			Collection<ArrayList<Document>> docs = map.values();
+			for(int c = 0; c < docs.size(); c++) {
+				Iterator<ArrayList<Document>> iterator = docs.iterator();
+				while(iterator.hasNext()) {
+					ArrayList<Document> arrayList = iterator.next();
+					Iterator<Document> docIter = arrayList.iterator();
+					while(docIter.hasNext()) {
+						Document document = docIter.next();
+						HashMap<String,ArrayList<ArrayList<String>>> tagMap = document.getTagMap();
+						Set<String> tags = tagMap.keySet();
+						Iterator<String> tagIter = tags.iterator();
+						while(tagIter.hasNext()) {
+							String tag = tagIter.next();							
+							ArrayList<ArrayList<String>> sentences = tagMap.get(tag);
+							Iterator<ArrayList<String>> sentIter = sentences.iterator();
+							while(sentIter.hasNext()) {
+								ArrayList<String> sentence = sentIter.next();
+								Object[] wordObjs = sentence.toArray();
+								String[] words = Arrays.copyOf(wordObjs, wordObjs.length, String[].class);
+								for (NameFinderME nameFinderMe : nerModels) {
+									System.out.println("running:" + nameFinderMe);
+									Span[] nes = nameFinderMe.find(words);
+									for (Span ne : nes) {
+										System.out.println(ne);
+									}
+									nameFinderMe.clearAdaptiveData();
+								}
+								
+							}
+						}
+					}
+				}
+			}
 		}
 		catch (IOException e) {
-		  e.printStackTrace();
-		}
-		finally {
-		  if (modelIn != null) {
-		    try {
-		      modelIn.close();
-		    }
-		    catch (IOException e) {
-		    }
-		  }
+			e.printStackTrace();
 		}
 	}
 

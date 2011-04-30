@@ -11,23 +11,22 @@ public class Document {
 	float score;
 
 	// Had to make it this complex so that comparing later one becomes easier/faster.
-	// Tag, {sentence1:{word1, word2,..}, sentence2:{...}}
-	HashMap<String, ArrayList<HashSet<String>>> tagMap;
+	HashMap<String, ArrayList<ArrayList<String>>> tagMap;
 
 	public Document(int qid, int rank, float score) {
 		this.qid = qid;
 		this.rank = rank;
 		this.score = score;
-		tagMap = new HashMap<String, ArrayList<HashSet<String>>>();
+		tagMap = new HashMap<String, ArrayList<ArrayList<String>>>();
 	}
 
 	public void addString(String key, String str) {
 		key = key.toLowerCase();
 		str = str.toLowerCase();
-		ArrayList<HashSet<String>> sentenceList = new ArrayList<HashSet<String>>();
+		ArrayList<ArrayList<String>> sentenceList = new ArrayList<ArrayList<String>>();
 		String[] sentences = str.split("[.]");
 		for (String sentence : sentences) {
-			HashSet<String> keyWords = getKeyWords(sentence);
+			ArrayList<String> keyWords = getKeyWords(sentence);
 			if(keyWords.size() == 0)
 				continue;
 			sentenceList.add(keyWords);
@@ -48,15 +47,19 @@ public class Document {
 		return rank;
 	}
 	
+	public HashMap<String, ArrayList<ArrayList<String>>> getTagMap() {
+		return tagMap;
+	}
+	
 	public float search(String question, ArrayList<String> ansWords) {
 		float maxScore = -1;
-		HashSet<String> solutionStr = null;
+		ArrayList<String> solutionStr = null;
 
 		Set<String> tagSet = tagMap.keySet();
-		HashSet<String> qWords = getKeyWords(question);
+		HashSet<String> qWords = getKeyWordsSet(question);
 		for (String tag : tagSet) {
-			ArrayList<HashSet<String>> sentences = tagMap.get(tag);
-			for (HashSet<String> sentence : sentences) {
+			ArrayList<ArrayList<String>> sentences = tagMap.get(tag);
+			for (ArrayList<String> sentence : sentences) {
 				float score = getOverlapScore(sentence, qWords)/sentence.size();
 				if(maxScore < score) {
 					solutionStr = sentence;
@@ -72,16 +75,30 @@ public class Document {
 		return maxScore;
 	}
 
-	private float getOverlapScore(HashSet<String> wordSet, HashSet<String> qWords) {
+	private float getOverlapScore(ArrayList<String> ArrayList, HashSet<String> qWords) {
 		int score = 0;
-		for (String qWord : qWords) {
-			if(wordSet.contains(qWord))
+		for (String word: ArrayList) {
+			if(qWords.contains(word))
 				++score;
 		}
 		return score;
 	}
 
-	private HashSet<String> getKeyWords(String question) {
+	private ArrayList<String> getKeyWords(String question) {
+		ArrayList<String> words = new ArrayList<String>();
+		String[] qWords = question.split("[,\\s]");
+		for (String qWord : qWords) {
+			if(!StopWords.isStopWord(qWord)) { 
+				if(qWord.endsWith("?"))
+					qWord = qWord.substring(0, qWord.length()-1);
+				if(!qWord.isEmpty())
+					words.add(qWord);
+			}
+		}
+		return words;
+	}
+
+	private HashSet<String> getKeyWordsSet(String question) {
 		HashSet<String> words = new HashSet<String>();
 		String[] qWords = question.split("[,\\s]");
 		for (String qWord : qWords) {
@@ -96,10 +113,10 @@ public class Document {
 	}
 
 	public String getValue(String string) {
-		ArrayList<HashSet<String>> arrayList = tagMap.get(string.toLowerCase());
+		ArrayList<ArrayList<String>> arrayList = tagMap.get(string.toLowerCase());
 		StringBuffer buf = new StringBuffer();
-		for (HashSet<String> hashSet : arrayList) {
-			for (String string2 : hashSet) {
+		for (ArrayList<String> list : arrayList) {
+			for (String string2 : list) {
 				buf.append(string2 + " ");
 			}
 		}
