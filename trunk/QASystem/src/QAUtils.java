@@ -198,7 +198,7 @@ public class QAUtils {
 						else {
 							while(null!=(posLine=posReader.readLine())) {
 								String[] posColumns = posLine.split("\t");
-								String[] posOffsets = columns[1].split(",");
+								String[] posOffsets = posColumns[1].split(",");
 								int posStart = Integer.parseInt(posOffsets[0]);
 								int posEnd = Integer.parseInt(posOffsets[1]);
 								if(posStart >= npsEnd) {

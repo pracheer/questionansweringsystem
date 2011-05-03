@@ -88,6 +88,7 @@ public class Question {
 			}
 			else if(question.contains("what")) {
 				qWriter = whatWriter;
+				posTypes.add(NPSType.NUM);
 				for(NEType neType : NEType.values()) {
 					answerTypes.add(neType);
 				}
@@ -100,19 +101,19 @@ public class Question {
 			}
 			else if (question.contains("how")) {
 				qWriter = howWriter;
-				if(question.contains("how much")) {
+//				if(question.contains("how much")) {
 					posTypes.add(NPSType.NUM);
-				}
-				else
+//				}
+//				else
 					for(NEType neType : NEType.values()) {
 						answerTypes.add(neType);
 					}
 			}
 			else {
 				qWriter = otherWriter;
-				for (NPSType npsType : NPSType.values()) {
-					posTypes.add(npsType);
-				}
+//				for (NPSType npsType : NPSType.values()) {
+//					posTypes.add(npsType);
+//				}
 				for(NEType neType : NEType.values()) {
 					answerTypes.add(neType);
 				}
