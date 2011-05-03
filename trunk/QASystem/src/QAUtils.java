@@ -14,7 +14,13 @@ public class QAUtils {
 	}
 
 	public static String[] getWords(String str) {
-		return str.split("\\W");
+		ArrayList<String> words = new ArrayList<String>();
+		String[] split = str.split("\\W");
+		for (String string : split) {
+			if(!string.isEmpty())
+				words.add(string);
+		}
+		return words.toArray(new String[1]);
 	}
 
 	public static ArrayList<Tuple> getSentences(File docDir, String str) {

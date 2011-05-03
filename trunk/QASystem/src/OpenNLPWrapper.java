@@ -8,6 +8,37 @@ import opennlp.tools.util.Span;
 
 public class OpenNLPWrapper {
 
+	enum OpenNLPNEType {
+		TIME ("time","models/en-ner-time.bin"),
+		PERCENT ("percent","models/en-ner-percentage.bin"),
+		ORGN("organization","models/en-ner-organization.bin"),
+		MONEY("money", "models/en-ner-money.bin"),
+		LOCN("location","models/en-ner-location.bin"),
+		DATE("date","models/en-ner-date.bin"),
+		PERSON("person","models/en-ner-person.bin");
+		
+		private String value;
+		private NameFinderME nameFinderME;
+		private OpenNLPNEType(String value, String model) {
+			try {
+				FileInputStream modelIn = new FileInputStream(model);
+				TokenNameFinderModel tnfModel = new TokenNameFinderModel(modelIn);
+				this.nameFinderME = new NameFinderME(tnfModel);
+				this.value = value;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public String getValue() {
+			return value;
+		}
+		
+		public NameFinderME getNameFinderME() {
+			return nameFinderME;
+		}
+	}
+
 	private static String[] getWordsfromSpans(String[] words, Span[] spans) {
 		String[] ne = new String[spans.length];
 		StringBuffer str = new StringBuffer();
@@ -51,35 +82,4 @@ public class OpenNLPWrapper {
 		return getWordsfromSpans(words, spans);
 	}
 	
-	enum OpenNLPNEType {
-		TIME ("time","models/en-ner-time.bin"),
-		PERCENT ("percent","models/en-ner-percentage.bin"),
-		ORGN("organization","models/en-ner-organization.bin"),
-		MONEY("money", "models/en-ner-money.bin"),
-		LOCN("location","models/en-ner-location.bin"),
-		DATE("date","models/en-ner-date.bin"),
-		PERSON("person","models/en-ner-person.bin");
-		
-		private String value;
-		private NameFinderME nameFinderME;
-		private OpenNLPNEType(String value, String model) {
-			try {
-				FileInputStream modelIn = new FileInputStream(model);
-				TokenNameFinderModel tnfModel = new TokenNameFinderModel(modelIn);
-				this.nameFinderME = new NameFinderME(tnfModel);
-				this.value = value;
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		public String getValue() {
-			return value;
-		}
-		
-		public NameFinderME getNameFinderME() {
-			return nameFinderME;
-		}
-	}
-
 }

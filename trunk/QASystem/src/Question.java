@@ -1,3 +1,7 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Question {
@@ -7,6 +11,38 @@ public class Question {
 	ArrayList<NEType>  answerTypes;
 	ArrayList<NPSType> posTypes;
 
+	static BufferedWriter whoWriter, whereWriter, 
+					whenWriter, whatWriter, 
+					whichWriter, howWriter, 
+					otherWriter;
+	
+	private static boolean categorizeQuestions;
+	
+	static void createQueWriters() {
+		try {
+			categorizeQuestions = true;
+			
+			File questionFile = new File(QA.properties.getProperty("questionsFile"));
+			File parentFile = questionFile.getParentFile();
+			File whoFile = new File(parentFile, "whoQuestions.txt");
+			File whereFile = new File(parentFile, "whereQuestions.txt");
+			File whenFile = new File(parentFile, "whenQuestions.txt");
+			File whatFile = new File(parentFile, "whatQuestions.txt");
+			File whichFile = new File(parentFile, "whichQuestions.txt");
+			File howFile = new File(parentFile, "howQuestions.txt");
+			File otherFile = new File(parentFile, "otherQuestions.txt");
+			
+			whoWriter = new BufferedWriter(new FileWriter(whoFile));
+			whereWriter = new BufferedWriter(new FileWriter(whereFile));
+			whenWriter = new BufferedWriter(new FileWriter(whenFile));
+			whatWriter = new BufferedWriter(new FileWriter(whatFile));
+			whichWriter = new BufferedWriter(new FileWriter(whichFile));
+			howWriter = new BufferedWriter(new FileWriter(howFile));
+			otherWriter = new BufferedWriter(new FileWriter(otherFile));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	public Question(int qid, String question) {
 		super();
 		this.qid = qid;
@@ -17,33 +53,80 @@ public class Question {
 	}
 
 	private void setType() {
-		if(question.contains("who")) {
-			answerTypes.add(NEType.PERSON);
-			// TODO: BUG : "who is abraham lincoln"
-			String[] qWords = QAUtils.getWords(question);
-		}
-		else if(question.contains("where")) {
-			answerTypes.add(NEType.LOCN);
-		}
-		else if(question.contains("when")){
-			answerTypes.add(NEType.DATE);
-		}
-		else if(question.contains("what"))
-			for(NEType neType : NEType.values()) {
-				answerTypes.add(neType);
+		try {
+			BufferedWriter qWriter = null;
+			if(question.contains("who")) {
+				qWriter = whoWriter;
+				// This is a fix for: BUG : "who is abraham lincoln"
+				// -> Then the answer is not person.
+				String[] qWords = QAUtils.getWords(question);
+				String[] persons = OpenNLPWrapper.runNEFinder(qWords, OpenNLPWrapper.OpenNLPNEType.PERSON);
+				int nameWordsCount = 0;
+				for (String person : persons) {
+					String[] words = QAUtils.getWords(person);
+					nameWordsCount += words.length;
+				}
+				if((qWords.length-nameWordsCount)<=2) {
+					for (NPSType npsType : NPSType.values()) {
+						posTypes.add(npsType);
+					}
+					for (NEType neType : NEType.values()) {
+						answerTypes.add(neType);
+					}
+				}
+				else {
+					answerTypes.add(NEType.PERSON);
+				}
 			}
-		else if (question.contains("which"))
-			for(NEType neType : NEType.values()) {
-				answerTypes.add(neType);
-			} 
-		else if (question.contains("how")) {
-			if(question.contains("how much")) {
-				posTypes.add(NPSType.NUM);
+			else if(question.contains("where")) {
+				qWriter = whereWriter;
+				answerTypes.add(NEType.LOCN);
 			}
-			else
+			else if(question.contains("when")) {
+				qWriter = whenWriter;
+				answerTypes.add(NEType.DATE);
+			}
+			else if(question.contains("what")) {
+				qWriter = whatWriter;
 				for(NEType neType : NEType.values()) {
 					answerTypes.add(neType);
 				}
+			}
+			else if (question.contains("which")) {
+				qWriter = whichWriter;
+				for(NEType neType : NEType.values()) {
+					answerTypes.add(neType);
+				} 
+			}
+			else if (question.contains("how")) {
+				qWriter = howWriter;
+				if(question.contains("how much")) {
+					posTypes.add(NPSType.NUM);
+				}
+				else
+					for(NEType neType : NEType.values()) {
+						answerTypes.add(neType);
+					}
+			}
+			else {
+				qWriter = otherWriter;
+				for (NPSType npsType : NPSType.values()) {
+					posTypes.add(npsType);
+				}
+				for(NEType neType : NEType.values()) {
+					answerTypes.add(neType);
+				}
+			}
+			if(categorizeQuestions) {
+				qWriter.append("<top>\n");
+				qWriter.append("<num> Number: "+qid+"\n");
+				qWriter.append("<desc> Description:\n");
+				qWriter.append(question+"\n");
+				qWriter.append("</top>\n\n");
+				qWriter.flush();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

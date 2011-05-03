@@ -12,20 +12,23 @@ import java.util.TreeMap;
 public class QA {
 
 	private static File propertiesFile = new File("data/QA.properties");
+	public static Properties properties = new Properties();
 	
 	public static void main(String[] args) {
 		try {
-			Properties properties = new Properties();
 			properties.load(new FileReader(propertiesFile));
 			
 			File questionsFile = new File(properties.getProperty("questionsFile"));
 			File reconcileDir = new File(properties.getProperty("reconcileDir"));
 			File answersFile = new File(properties.getProperty("answersFile"));
 			
+			boolean categorizeQues = 
+				Boolean.parseBoolean(QA.properties.getProperty("categorizeQuestions"));
+
 			BufferedWriter ansWriter = new BufferedWriter(new FileWriter(answersFile));
 			
 			System.err.println("Starting to parse Questions File:"+questionsFile);
-			Questions questions = Questions.parseQuesFile(questionsFile);
+			Questions questions = Questions.parseQuesFile(questionsFile, categorizeQues);
 			System.err.println("Questions File parsed.");
 			
 			Collection<Question> questions2 = questions.getQuestions();
