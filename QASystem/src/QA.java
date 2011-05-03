@@ -38,9 +38,9 @@ public class QA {
 
 				BufferedWriter ansWriter = new BufferedWriter(new FileWriter(answersFile));
 
-				System.err.println("Starting to parse Questions File:"+questionsFile);
+				System.out.println("Starting to parse Questions File:"+questionsFile);
 				Questions questions = Questions.parseQuesFile(questionsFile, categorizeQues);
-				System.err.println("Questions File parsed.");
+				System.out.println("Questions File parsed.");
 
 				if(categorizeQues)
 					return;
@@ -88,7 +88,7 @@ public class QA {
 							}
 						}
 
-						for (Tuple sentence : sentences) {
+						for (Tuple sentence : answerSentences) {
 							ArrayList<Tuple> entities;
 
 							ArrayList<Question.NEType> neTypes = question.getNETypes();
@@ -96,9 +96,11 @@ public class QA {
 									sentence.startOffset, sentence.endOffset, neTypes);
 
 							ArrayList<Question.NPSType> posTypes = question.getPosTypes();
-							QAUtils.getNP(docDir, buf.toString(), 
+							ArrayList<Tuple> nps = QAUtils.getNP(docDir, buf.toString(), 
 									sentence.startOffset, sentence.endOffset, posTypes);
 
+							entities.addAll(nps);
+							
 							for (Tuple tuple : entities) {
 								tuple.score = sentence.score;
 								nes.put(tuple.score, tuple);
@@ -109,6 +111,7 @@ public class QA {
 					QAUtils.writeAnswers(ansWriter, qid, nes.values());
 				}
 				ansWriter.close();
+				System.out.println("answers written to file:"+answersFile);
 			}
 
 		} catch (Exception e) {
