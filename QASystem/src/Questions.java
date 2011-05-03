@@ -16,9 +16,10 @@ public class Questions {
 		questions = new HashMap<Integer, Question>();
 	}
 	
-	public void addQuestion(Integer qid, String queStr) {
+	public Question addQuestion(Integer qid, String queStr) {
 		Question question = new Question(qid, queStr.toLowerCase());
 		questions.put(qid, question);
+		return question;
 	}
 	
 	public int getCount() {
@@ -33,9 +34,11 @@ public class Questions {
 		return questions.get(qid);
 	}
 	
-	public static Questions parseQuesFile(File questionsFile) {
+	public static Questions parseQuesFile(File questionsFile, boolean categorizeQues) {
 		try {
-			
+			if(categorizeQues) {
+				Question.createQueWriters();
+			}
 			Questions thisObj = new Questions();
 			BufferedReader reader = new BufferedReader(new FileReader(questionsFile));
 			String str;
