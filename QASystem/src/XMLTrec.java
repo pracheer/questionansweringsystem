@@ -54,7 +54,7 @@ public class XMLTrec extends DefaultHandler{
 				str = str.replaceAll("&pound;", " Pound ");
 				str = str.replaceAll("&equals;", "=");
 				str = str.replaceAll("&lsqb;", "");
-				str = str.replaceAll("[^\\s\\w&;-\\[\\]~`\"'\\\\(),/.:!@#$%*=+]","");
+				str = str.replaceAll("[^\\s\\w&;-\\[\\]~`\"'\\\\(),/.:!@#$%*=+]"," ");
 				str = str.trim();
 				
 				if(str.isEmpty())
@@ -178,7 +178,9 @@ public class XMLTrec extends DefaultHandler{
 			for(int i = 0; i < docNodeList.getLength(); i++) {
 				Node docNode = docNodeList.item(i);
 				String rank = docNode.getAttributes().getNamedItem(RANK).getTextContent();
-				File rawFile = new File(rawFileDir, qid + "_" + rank + ".txt");
+				File dir = new File(rawFileDir, qid + "_" + rank);
+				dir.mkdirs();
+				File rawFile = new File(dir, "raw.txt");
 				
 				if(rawFile.exists() && !overwrite)
 					continue;
