@@ -90,12 +90,31 @@ public class Question {
 				qWriter = whenWriter;
 				namedEntityTypes.add(NEType.DATE);
 			}
+			else if (question.contains("name")) {
+				qWriter = nameWriter;
+				posTypes.add(NPSType.NNP);
+//				for (NPSType npsType : NPSType.values()) {
+//					posTypes.add(npsType);
+//				}
+//				namedEntityTypes.add(NEType.PERSON);
+			}
 			else if(question.contains("what")) {
 				qWriter = whatWriter;
-				posTypes.add(NPSType.NUM);
-				for(NEType neType : NEType.values()) {
-					namedEntityTypes.add(neType);
-				}
+//				posTypes.add(NPSType.NNP);	// 0.039 61 not answered.
+				posTypes.add(NPSType.NP);	// MRR 0.122 50 NA
+//				posTypes.add(NPSType.NEWNP);	// MRR 0.07 57 NA
+//				posTypes.add(NPSType.NUM);	// no effect.
+//				posTypes.add(NPSType.NPE);	// decreases MRR by 0.004 but 1 extra Q answered
+//				namedEntityTypes.add(NEType.)
+//				for (NPSType npsType : NPSType.values()) {
+//					;
+//				}
+//				namedEntityTypes.add(NEType.PERSON);// no effect
+//				namedEntityTypes.add(NEType.LOCN);// 0.076 58 NA
+//				namedEntityTypes.add(NEType.)
+//				for(NEType neType : NEType.values()) {
+//					namedEntityTypes.add(neType);
+//				}
 			}
 			else if (question.contains("which")) {
 				qWriter = whichWriter;
@@ -115,17 +134,9 @@ public class Question {
 			}
 			else if (question.contains("why")) {
 				qWriter = whyWriter;
-				NPSType[] npsTypes = NPSType.values();
-				for (NPSType npsType : npsTypes) {
-					posTypes.add(npsType);
-				}
-			}
-			else if (question.contains("name")) {
-				qWriter = nameWriter;
 				for (NPSType npsType : NPSType.values()) {
 					posTypes.add(npsType);
 				}
-				namedEntityTypes.add(NEType.PERSON);
 			}
 			else {
 				qWriter = otherWriter;
