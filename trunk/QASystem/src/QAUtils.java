@@ -93,8 +93,10 @@ public class QAUtils {
 		HashSet<String> s2WordsSet = new HashSet<String>(Arrays.asList(s2Words)); 
 
 		int score = 0;
-		for (String qWord : s1WordsSet) {
-			if(s2WordsSet.contains(qWord))
+		for (String s1Word : s1WordsSet) {
+//			if(StopWords.isStopWord(s1Word))
+//				continue;
+			if(s2WordsSet.contains(s1Word))
 				score++;
 		}
 
