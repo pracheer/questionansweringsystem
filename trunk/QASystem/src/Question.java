@@ -8,12 +8,13 @@ public class Question {
 	private int qid;
 	private String question;
 
-	ArrayList<NEType>  answerTypes;
+	ArrayList<NEType>  namedEntityTypes;
 	ArrayList<NPSType> posTypes;
 
 	static BufferedWriter whoWriter, whereWriter, 
 					whenWriter, whatWriter, 
-					whichWriter, howWriter, 
+					whichWriter, whyWriter,
+					nameWriter, howWriter, 
 					otherWriter;
 	
 	private static boolean categorizeQuestions;
@@ -22,21 +23,24 @@ public class Question {
 		try {
 			categorizeQuestions = true;
 			
-			File questionFile = new File(QA.properties.getProperty("questionsFile"));
-			File parentFile = questionFile.getParentFile();
-			File whoFile = new File(parentFile, "whoQuestions.txt");
-			File whereFile = new File(parentFile, "whereQuestions.txt");
-			File whenFile = new File(parentFile, "whenQuestions.txt");
-			File whatFile = new File(parentFile, "whatQuestions.txt");
-			File whichFile = new File(parentFile, "whichQuestions.txt");
-			File howFile = new File(parentFile, "howQuestions.txt");
-			File otherFile = new File(parentFile, "otherQuestions.txt");
+			File parentDir = new File(QA.properties.getProperty("questionsDir"));
+			File whoFile = new File(parentDir, "whoQuestions.txt");
+			File whereFile = new File(parentDir, "whereQuestions.txt");
+			File whenFile = new File(parentDir, "whenQuestions.txt");
+			File whatFile = new File(parentDir, "whatQuestions.txt");
+			File whichFile = new File(parentDir, "whichQuestions.txt");
+			File whyFile = new File(parentDir, "whyQuestions.txt");
+			File nameFile = new File(parentDir, "nameQuestions.txt");
+			File howFile = new File(parentDir, "howQuestions.txt");
+			File otherFile = new File(parentDir, "otherQuestions.txt");
 			
 			whoWriter = new BufferedWriter(new FileWriter(whoFile));
 			whereWriter = new BufferedWriter(new FileWriter(whereFile));
 			whenWriter = new BufferedWriter(new FileWriter(whenFile));
 			whatWriter = new BufferedWriter(new FileWriter(whatFile));
 			whichWriter = new BufferedWriter(new FileWriter(whichFile));
+			whyWriter = new BufferedWriter(new FileWriter(whyFile));
+			nameWriter = new BufferedWriter(new FileWriter(nameFile));
 			howWriter = new BufferedWriter(new FileWriter(howFile));
 			otherWriter = new BufferedWriter(new FileWriter(otherFile));
 		} catch (IOException e) {
@@ -47,7 +51,7 @@ public class Question {
 		super();
 		this.qid = qid;
 		this.question = question.toLowerCase();
-		answerTypes = new ArrayList<Question.NEType>();
+		namedEntityTypes = new ArrayList<Question.NEType>();
 		posTypes = new ArrayList<Question.NPSType>();
 		setType();
 	}
@@ -71,32 +75,32 @@ public class Question {
 						posTypes.add(npsType);
 					}
 					for (NEType neType : NEType.values()) {
-						answerTypes.add(neType);
+						namedEntityTypes.add(neType);
 					}
 				}
 				else {
-					answerTypes.add(NEType.PERSON);
+					namedEntityTypes.add(NEType.PERSON);
 				}
 			}
 			else if(question.contains("where")) {
 				qWriter = whereWriter;
-				answerTypes.add(NEType.LOCN);
+				namedEntityTypes.add(NEType.LOCN);
 			}
 			else if(question.contains("when")) {
 				qWriter = whenWriter;
-				answerTypes.add(NEType.DATE);
+				namedEntityTypes.add(NEType.DATE);
 			}
 			else if(question.contains("what")) {
 				qWriter = whatWriter;
 				posTypes.add(NPSType.NUM);
 				for(NEType neType : NEType.values()) {
-					answerTypes.add(neType);
+					namedEntityTypes.add(neType);
 				}
 			}
 			else if (question.contains("which")) {
 				qWriter = whichWriter;
 				for(NEType neType : NEType.values()) {
-					answerTypes.add(neType);
+					namedEntityTypes.add(neType);
 				} 
 			}
 			else if (question.contains("how")) {
@@ -106,16 +110,27 @@ public class Question {
 //				}
 //				else
 					for(NEType neType : NEType.values()) {
-						answerTypes.add(neType);
+						namedEntityTypes.add(neType);
 					}
+			}
+			else if (question.contains("why")) {
+				qWriter = whyWriter;
+				NPSType[] npsTypes = NPSType.values();
+				for (NPSType npsType : npsTypes) {
+					posTypes.add(npsType);
+				}
+			}
+			else if (question.contains("name")) {
+				qWriter = nameWriter;
+				for (NPSType npsType : NPSType.values()) {
+					posTypes.add(npsType);
+				}
+				namedEntityTypes.add(NEType.PERSON);
 			}
 			else {
 				qWriter = otherWriter;
-//				for (NPSType npsType : NPSType.values()) {
-//					posTypes.add(npsType);
-//				}
 				for(NEType neType : NEType.values()) {
-					answerTypes.add(neType);
+					namedEntityTypes.add(neType);
 				}
 			}
 			if(categorizeQuestions) {
@@ -140,7 +155,7 @@ public class Question {
 	}
 
 	public ArrayList<NEType> getNETypes() {
-		return answerTypes;
+		return namedEntityTypes;
 	}
 
 	public ArrayList<NPSType> getPosTypes() {
@@ -170,6 +185,17 @@ public class Question {
 		}
 	}
 
+	/**
+	 * all types of noun phrases possible in nps file.
+	 * the second argument is optional and indicates if the noun phrase from nps file 
+	 * should contain something from postag or not.
+	 * E.g, numeric noun phrase  like "20 hexagons" which would be denoted as NP in nps file.
+	 * To check if it has a number in it, we would need to check postag file and see if it contains
+	 * CD (indicating number) in it.
+	 * 
+	 * @author Prac
+	 *
+	 */
 	enum NPSType {
 		NPE("NPE", ""),
 		NP("NP", ""),

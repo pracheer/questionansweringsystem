@@ -32,18 +32,18 @@ public class QA {
 			for(int q = 0; q < queFiles.length; q++) {
 				File questionsFile = new File(questionsDir, queFiles[q]);
 				System.out.println("Processing question File:"+(q+1)+":"+queFiles[q]);
-				File answersFile = new File(answersDir, ansFiles[q]);
-				File reconcileDir = new File(properties.getProperty("reconcileDir"));
-
-
-				BufferedWriter ansWriter = new BufferedWriter(new FileWriter(answersFile));
-
+				
 				System.out.println("Starting to parse Questions File:"+questionsFile);
 				Questions questions = Questions.parseQuesFile(questionsFile, categorizeQues);
 				System.out.println("Questions File parsed.");
 
 				if(categorizeQues)
 					return;
+
+				File reconcileDir = new File(properties.getProperty("reconcileDir"));
+				
+				File answersFile = new File(answersDir, ansFiles[q]);
+				BufferedWriter ansWriter = new BufferedWriter(new FileWriter(answersFile));
 
 				Collection<Question> questions2 = questions.getQuestions();
 				for (Question question : questions2) {
