@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,13 +17,18 @@ public class QA {
 
 	private static File propertiesFile = new File("data/QA.properties");
 	public static Properties properties = new Properties();
-
+	static {
+	try {
+		properties.load(new FileReader(propertiesFile));
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	}
 	public static void main(String[] args) {
 		try {
 
 			long startTime = System.currentTimeMillis();
 
-			properties.load(new FileReader(propertiesFile));
 
 			boolean categorizeQues = 
 				Boolean.parseBoolean(QA.properties.getProperty("categorizeQuestions"));
