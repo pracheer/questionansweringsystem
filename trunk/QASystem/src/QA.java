@@ -11,8 +11,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
-import javax.naming.ldap.StartTlsRequest;
-
 public class QA {
 
 	private static File propertiesFile = new File("data/QA.properties");

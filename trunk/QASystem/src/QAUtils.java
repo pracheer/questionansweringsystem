@@ -87,20 +87,51 @@ public class QAUtils {
 
 	public static int getWordOverlap(String sent1, String sent2) {
 		String[] s1Words = QAUtils.getWords(sent1);
-		HashSet<String> s1WordsSet = new HashSet<String>(Arrays.asList(s1Words)); 
+		String[] s1Stems = getStems(s1Words);
+		HashSet<String> s1WordsSet = new HashSet<String>(Arrays.asList(s1Stems));
 
 		String[] s2Words = QAUtils.getWords(sent2);
-		HashSet<String> s2WordsSet = new HashSet<String>(Arrays.asList(s2Words)); 
+		String[] s2Stems = getStems(s2Words);
+		HashSet<String> s2WordsSet = new HashSet<String>(Arrays.asList(s2Stems));
 
 		int score = 0;
 		for (String s1Word : s1WordsSet) {
-//			if(StopWords.isStopWord(s1Word))
-//				continue;
-			if(s2WordsSet.contains(s1Word))
+/*			Removing stop words is not helping at all. so removing it.
+			if(StopWords.isStopWord(s1Word))
+				continue;
+*/			if(s2WordsSet.contains(s1Word))
 				score++;
 		}
 
 		return score;
+	}
+
+	/*
+	 * Implement Porter Stemmer to get the roots.
+	 */
+	private static String[] getStems(String[] words) {
+		boolean useStemmer = 
+			Boolean.parseBoolean(QA.properties.getProperty("usestemmer"));
+		
+		if(!useStemmer)
+			return words;
+		
+		String[] stemmedList = new String[words.length];
+		if(null==words)
+			return stemmedList;
+		
+		Stemmer stemmer = new Stemmer();
+		for (int i = 0; i < words.length; i++) {
+			String word = words[i];
+			if(null==word || word.isEmpty())
+				continue;
+			char[] charArray = word.toCharArray();
+			stemmer.add(charArray, charArray.length);
+			stemmer.stem();
+			String string = stemmer.toString();
+			stemmedList[i] = string;
+		}
+		return stemmedList;
 	}
 
 	/**
