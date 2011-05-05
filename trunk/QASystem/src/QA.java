@@ -67,6 +67,16 @@ public class QA {
 					HashMap<String, Tuple> tupleScoreMap = new HashMap<String, Tuple>();
 
 					for(int rank = 1; rank <= numDocs; rank++) {
+						File docDir = new File(reconcileDir, qid+"_"+rank);
+
+						if(!docDir.exists())
+							break;
+
+						File responseNPFile = new File(
+								docDir+File.separator+Constants.ANNOTATIONS_DIR, "responseNPs");
+					}
+					
+					for(int rank = 1; rank <= numDocs; rank++) {
 
 						File docDir = new File(reconcileDir, qid+"_"+rank);
 
