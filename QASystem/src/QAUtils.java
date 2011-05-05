@@ -1,7 +1,12 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +57,7 @@ public class QAUtils {
 
 		try {
 			File neFile = new File(docDir + File.separator + Constants.ANNOTATIONS_DIR, Constants.NE_FILE);
-			
+
 			if(!neFile.exists()) {
 				System.err.println(neFile+" not found. so skipping it.");
 				return tuples;
@@ -96,11 +101,11 @@ public class QAUtils {
 
 		int score = 0;
 		for (String s1Word : s1WordsSet) {
-/*			Removing stop words is not helping at all. so removing it.
+			/*			Removing stop words is not helping at all. so removing it.
 			if(StopWords.isStopWord(s1Word))
 				continue;
-*/			if(s2WordsSet.contains(s1Word))
-				score++;
+			 */			if(s2WordsSet.contains(s1Word))
+				 score++;
 		}
 
 		return score;
@@ -112,14 +117,14 @@ public class QAUtils {
 	private static String[] getStems(String[] words) {
 		boolean useStemmer = 
 			Boolean.parseBoolean(QA.properties.getProperty("usestemmer"));
-		
+
 		if(!useStemmer)
 			return words;
-		
+
 		String[] stemmedList = new String[words.length];
 		if(null==words)
 			return stemmedList;
-		
+
 		Stemmer stemmer = new Stemmer();
 		for (int i = 0; i < words.length; i++) {
 			String word = words[i];
@@ -266,7 +271,7 @@ public class QAUtils {
 		}
 		return tuples;
 	}
-	
+
 	public static ArrayList<String> getKeyWords(String question) {
 		ArrayList<String> words = new ArrayList<String>();
 		String[] qWords = question.split("[,\\s]");
@@ -302,6 +307,34 @@ public class QAUtils {
 		return score;
 	}
 
+	public static void cp(File inFile, File outputFile)
+	{
+		try {
+			FileReader r = new FileReader(inFile);
+			FileWriter w = new FileWriter(outputFile);
+			write(w, r);
+			r.close();
+			w.flush();
+			w.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void write(Writer writer, Reader r)
+	{
+		try {
+			BufferedWriter bw = new BufferedWriter(writer);
+			BufferedReader br = new BufferedReader(r);
+			for (int data = br.read(); data != -1; data = br.read()) {
+				bw.write(data);
+			}
+			bw.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 }
 
