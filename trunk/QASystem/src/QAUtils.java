@@ -52,6 +52,11 @@ public class QAUtils {
 
 		try {
 			File neFile = new File(docDir + File.separator + Constants.ANNOTATIONS_DIR, Constants.NE_FILE);
+			
+			if(!neFile.exists()) {
+				System.err.println(neFile+" not found. so skipping it.");
+				return tuples;
+			}
 			BufferedReader reader = new BufferedReader(new FileReader(neFile));
 			String line;
 			while(null!=(line=reader.readLine())) {
@@ -161,9 +166,17 @@ public class QAUtils {
 
 		try {
 			File npsFile = new File(docDir + File.separator + Constants.ANNOTATIONS_DIR, Constants.NPS_FILE);
+			if(!npsFile.exists()) {
+				System.err.println(npsFile+" not found. so skipping it.");
+				return tuples;
+			}
 			BufferedReader npsReader = new BufferedReader(new FileReader(npsFile));
 
 			File posTagFile = new File(docDir + File.separator + Constants.ANNOTATIONS_DIR, Constants.POS_FILE);
+			if(!posTagFile.exists()) {
+				System.err.println(posTagFile+" not found. so skipping it.");
+				return tuples;
+			}
 			BufferedReader posReader = new BufferedReader(new FileReader(posTagFile));
 
 			String posLine;
@@ -220,5 +233,42 @@ public class QAUtils {
 		}
 		return tuples;
 	}
+	
+	public static ArrayList<String> getKeyWords(String question) {
+		ArrayList<String> words = new ArrayList<String>();
+		String[] qWords = question.split("[,\\s]");
+		for (String qWord : qWords) {
+			if(!StopWords.isStopWord(qWord)) { 
+				if(qWord.endsWith("?"))
+					qWord = qWord.substring(0, qWord.length()-1);
+				if(!qWord.isEmpty())
+					words.add(qWord);
+			}
+		}
+		return words;
+	}
+
+	public static HashSet<String> getKeyWordsSet(String question) {
+		HashSet<String> words = new HashSet<String>();
+		ArrayList<String> keyWords = getKeyWords(question);
+		for (String keyWord : keyWords) {
+			words.add(keyWord);
+		}
+		return words;
+	}
+
+	public static int getOverlapScore(String sentence, HashSet<String> qWords) {
+		int score = 0;
+		String[] ArrayList = QAUtils.getWords(sentence);
+		for (String word: ArrayList) {
+			if(word.isEmpty())
+				continue;
+			if(qWords.contains(word))
+				++score;
+		}
+		return score;
+	}
+
+
 }
 

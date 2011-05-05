@@ -56,12 +56,12 @@ public class Document {
 	public float search(String question, ArrayList<String> ansWords) {
 		float maxScore = -1;
 		String solutionStr = null;
-		HashSet<String> qWords = getKeyWordsSet(question);
+		HashSet<String> qWords = QAUtils.getKeyWordsSet(question);
 		
 		String str = text.toString();
 		String[] sentences = QAUtils.getSentences(str);
 		for (String sentence : sentences) {
-			float score = getOverlapScore(sentence, qWords)/sentence.length()/*getSurroundLength(sentence)*/;
+			float score = QAUtils.getOverlapScore(sentence, qWords)/sentence.length()/*getSurroundLength(sentence)*/;
 			if(maxScore < score) {
 				solutionStr = sentence;
 				maxScore = score;
@@ -78,12 +78,12 @@ public class Document {
 
 	public float searchSentences(String question, ArrayList<String> ansSentences) {
 		int maxScore = -1;
-		HashSet<String> qWords = getKeyWordsSet(question);
+		HashSet<String> qWords = QAUtils.getKeyWordsSet(question);
 		
 		String str = text.toString();
 		String[] sentences = QAUtils.getSentences(str);
 		for (String sentence : sentences) {
-			int score = getOverlapScore(sentence, qWords)/*getSurroundLength(sentence)*/;
+			int score = QAUtils.getOverlapScore(sentence, qWords)/*getSurroundLength(sentence)*/;
 			if(maxScore < score) {
 				ansSentences.clear();
 				ansSentences.add(sentence);
@@ -110,7 +110,7 @@ public class Document {
 
 		float maxScore = -1;
 		String solutionStr = null;
-		HashSet<String> qWords = getKeyWordsSet(question);
+		HashSet<String> qWords = QAUtils.getKeyWordsSet(question);
 		
 		String str = text.toString();
 		String[] sentences = QAUtils.getSentences(str);
@@ -133,7 +133,7 @@ public class Document {
 			if(!found)
 				continue;
 			
-			float score = getOverlapScore(sentence, qWords)/sentence.length()/*getSurroundLength(sentence)*/;
+			float score = QAUtils.getOverlapScore(sentence, qWords)/sentence.length()/*getSurroundLength(sentence)*/;
 			if(maxScore < score) {
 				solutionStr = entity;
 				maxScore = score;
@@ -160,41 +160,6 @@ public class Document {
 		return DEFAULT_SUR_LENGTH;
 	}
 	
-	private int getOverlapScore(String sentence, HashSet<String> qWords) {
-		int score = 0;
-		String[] ArrayList = QAUtils.getWords(sentence);
-		for (String word: ArrayList) {
-			if(word.isEmpty())
-				continue;
-			if(qWords.contains(word))
-				++score;
-		}
-		return score;
-	}
-
-	private ArrayList<String> getKeyWords(String question) {
-		ArrayList<String> words = new ArrayList<String>();
-		String[] qWords = question.split("[,\\s]");
-		for (String qWord : qWords) {
-			if(!StopWords.isStopWord(qWord)) { 
-				if(qWord.endsWith("?"))
-					qWord = qWord.substring(0, qWord.length()-1);
-				if(!qWord.isEmpty())
-					words.add(qWord);
-			}
-		}
-		return words;
-	}
-
-	private HashSet<String> getKeyWordsSet(String question) {
-		HashSet<String> words = new HashSet<String>();
-		ArrayList<String> keyWords = getKeyWords(question);
-		for (String keyWord : keyWords) {
-			words.add(keyWord);
-		}
-		return words;
-	}
-
 	/**
 	 * To get the string associated with a given tag
 	 * @param tag
