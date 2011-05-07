@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,7 +9,9 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 public class QAUtils {
 
@@ -91,11 +92,11 @@ public class QAUtils {
 	}
 
 	public static int getWordOverlap(String sent1, String sent2) {
-		String[] s1Words = QAUtils.getWords(sent1);
+		String[] s1Words = QAUtils.getWords(sent1.toLowerCase());
 		String[] s1Stems = getStems(s1Words);
 		HashSet<String> s1WordsSet = new HashSet<String>(Arrays.asList(s1Stems));
 
-		String[] s2Words = QAUtils.getWords(sent2);
+		String[] s2Words = QAUtils.getWords(sent2.toLowerCase());
 		String[] s2Stems = getStems(s2Words);
 		HashSet<String> s2WordsSet = new HashSet<String>(Arrays.asList(s2Stems));
 
@@ -148,9 +149,12 @@ public class QAUtils {
 	public static void writeAnswers(BufferedWriter ansWriter, int qid,
 			Collection<Tuple> tuples) {
 		try {
-			StringBuffer buf = new StringBuffer();
-			int totalCount = 0;
-			int i = 0;
+			ArrayList<String> answers = new ArrayList<String>();
+			ArrayList<Integer> ansSize = new ArrayList<Integer>();
+			
+//			StringBuffer buf = new StringBuffer();
+//			int totalCount = 0;
+//			int i = 0;
 
 			// used to check for repetition.
 			HashSet<String> entities = new HashSet<String>();
@@ -159,26 +163,54 @@ public class QAUtils {
 				if(entities.contains(tuple.str))
 					continue;
 				entities.add(tuple.str);
+				boolean added = false;
 				int tupleWords = countWords(tuple.str);
-				if(i +  tupleWords > 10) {
-					++totalCount;
-					ansWriter.write(qid + " top_docs."+qid+" " + buf.toString()+"\n");
-					buf.setLength(0);
-
-					if(totalCount >= 5)
-						return;
-
-					i = tupleWords;
-					buf.append(tuple.str + " ");
+				for(int s = 0; s < ansSize.size(); s++) {
+					Integer integer = ansSize.get(s);
+					if(tupleWords + integer <= 10) {
+						ansSize.add(s, tupleWords+integer);
+						ansSize.remove(s+1);
+						String string = answers.get(s);
+						answers.add(s, string+" " + tuple.str);
+						answers.remove(s+1);
+						added = true;
+						break;
+					}
 				}
-				else {
-					i += tupleWords;
-					buf.append(tuple.str +" ");
+				
+				if(!added) {
+					if(answers.size()>=5) 
+						break;
+					
+					answers.add(tuple.str);
+					ansSize.add(tupleWords);
 				}
+				
+//				if(i +  tupleWords > 10) {
+//					++totalCount;
+//					answers.add(buf.toString());
+//					ansSize.add(i);
+//					
+//					buf.setLength(0);
+//
+//					if(totalCount >= 5)
+//						return;
+//
+//					i = tupleWords;
+//					buf.append(tuple.str + " ");
+//				}
+//				else {
+//					i += tupleWords;
+//					buf.append(tuple.str +" ");
+//				}
 			}
 
-			if(buf.length() > 0)
-				ansWriter.write(qid + " top_docs."+qid+" " + buf.toString()+"\n");
+//			if(buf.length() > 0)
+//				answers.add(buf.toString());
+			
+			for (String answer : answers) {
+				ansWriter.write(qid + " top_docs."+qid+" " + answer +"\n");
+			}
 
 			ansWriter.flush();
 		} catch (Exception e) {
@@ -336,5 +368,73 @@ public class QAUtils {
 		}
 	}
 
-}
+	public static HashMap<String,HashSet<String>> getCoreferingWords(String string, File corefFile) {
+		HashMap<Integer, HashSet<String>> corefs = new HashMap<Integer, HashSet<String>>();
+		HashMap<String, HashSet<String>> corefWords = new HashMap<String, HashSet<String>>();
+		try {
+			BufferedReader corefReader = new BufferedReader(new FileReader(corefFile));
+			String line;
+			while(null!=(line=corefReader.readLine())) {
+				String[] columns = line.split("\t");
+				int indexOf = columns[4].indexOf("CorefID");
+				int corefID = Integer.parseInt(
+						columns[4].substring(indexOf+9, 
+								columns[4].indexOf(" ", indexOf)-1));
+//				System.out.println(corefID);
+				String[] split = columns[1].split(",");
 
+				HashSet<String> list;
+				if(corefs.containsKey(corefID))
+					list = corefs.get(corefID);
+				else
+					list = new HashSet<String>();
+
+				int corefStart = Integer.parseInt(split[0]);
+				int corefEnd = Integer.parseInt(split[1]); 
+				String word = string.substring(corefStart, corefEnd);
+				list.add(word);
+
+				corefs.put(corefID, list);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		Set<Integer> keySet = corefs.keySet();
+		for (Integer corefID : keySet) {
+			HashSet<String> arrayList = corefs.get(corefID);
+			for (String word : arrayList) {
+				corefWords.put(word, arrayList);
+				System.out.println(word+":"+arrayList);
+			}
+		}
+
+		return corefWords;
+	}
+
+	public static ArrayList<Tuple> getCorefWords(File docDir, String string,
+			HashSet<String> queSet) {
+		
+		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+		
+		File corefFile = new File(
+				docDir+File.separator + Constants.ANNOTATIONS_DIR, Constants.COREF_FILE);
+
+		if(!corefFile.exists()) 
+			return tuples;
+		
+		HashMap<String,HashSet<String>> coreferingWords = QAUtils.getCoreferingWords(string, corefFile);
+
+		Set<String> words = coreferingWords.keySet();
+		for (String word : words) {
+			if(StopWords.isStopWord(word))
+				continue;
+			if(queSet.contains(word)) {
+				HashSet<String> arrayList = coreferingWords.get(word);
+				for (String string2 : arrayList) {
+					tuples.add(new Tuple(string2, -1, -1, -1));
+				}
+			}
+		}
+		return tuples;
+	}
+}
