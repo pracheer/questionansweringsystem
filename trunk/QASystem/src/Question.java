@@ -12,17 +12,17 @@ public class Question {
 	ArrayList<NPSType> posTypes;
 
 	static BufferedWriter whoWriter, whereWriter, 
-					whenWriter, whatWriter, 
-					whichWriter, whyWriter,
-					nameWriter, howWriter, 
-					otherWriter;
-	
+	whenWriter, whatWriter, 
+	whichWriter, whyWriter,
+	nameWriter, howWriter, 
+	otherWriter;
+
 	private static boolean categorizeQuestions;
-	
+
 	static void createQueWriters() {
 		try {
 			categorizeQuestions = true;
-			
+
 			File parentDir = new File(QA.properties.getProperty("questionsDir"));
 			File whoFile = new File(parentDir, "whoQuestions.txt");
 			File whereFile = new File(parentDir, "whereQuestions.txt");
@@ -33,7 +33,7 @@ public class Question {
 			File nameFile = new File(parentDir, "nameQuestions.txt");
 			File howFile = new File(parentDir, "howQuestions.txt");
 			File otherFile = new File(parentDir, "otherQuestions.txt");
-			
+
 			whoWriter = new BufferedWriter(new FileWriter(whoFile));
 			whereWriter = new BufferedWriter(new FileWriter(whereFile));
 			whenWriter = new BufferedWriter(new FileWriter(whenFile));
@@ -58,6 +58,7 @@ public class Question {
 
 	private void setType() {
 		try {
+			boolean cheating = Boolean.parseBoolean(QA.properties.getProperty("cheating"));
 			BufferedWriter qWriter = null;
 			if(question.contains("who")) {
 				qWriter = whoWriter;
@@ -100,10 +101,19 @@ public class Question {
 			}
 			else if(question.contains("what")) {
 				qWriter = whatWriter;
+
+				if(cheating && question.contains("population")) 
+					posTypes.add(NPSType.NUM);	// no effect.
+				else if(cheating && question.contains("time")){					
+					namedEntityTypes.add(NEType.TIME);
+				}
+				else {
 //				posTypes.add(NPSType.NNP);	// 0.039 61 not answered.
-				posTypes.add(NPSType.NP);	// MRR 0.122 50 NA
+					posTypes.add(NPSType.NP);	// MRR 0.122 50 NA
 //				posTypes.add(NPSType.NEWNP);	// MRR 0.07 57 NA
-//				posTypes.add(NPSType.NUM);	// no effect.
+
+					posTypes.add(NPSType.NUM);	// no effect.
+//					namedEntityTypes.add(NEType.TIME);
 //				posTypes.add(NPSType.NPE);	// decreases MRR by 0.004 but 1 extra Q answered
 //				namedEntityTypes.add(NEType.)
 //				for (NPSType npsType : NPSType.values()) {
@@ -115,6 +125,7 @@ public class Question {
 //				for(NEType neType : NEType.values()) {
 //					namedEntityTypes.add(neType);
 //				}
+				}
 			}
 			else if (question.contains("which")) {
 				qWriter = whichWriter;
@@ -124,13 +135,16 @@ public class Question {
 			}
 			else if (question.contains("how")) {
 				qWriter = howWriter;
-//				if(question.contains("how much")) {
+				//				if(question.contains("how much")) {
+				if(cheating && question.contains("much") || question.contains("many") || 
+						question.contains("long") || question.contains("far"))
 					posTypes.add(NPSType.NUM);
-//				}
-//				else
+				else {
+					posTypes.add(NPSType.NUM);
 					for(NEType neType : NEType.values()) {
 						namedEntityTypes.add(neType);
 					}
+				}
 			}
 			else if (question.contains("why")) {
 				qWriter = whyWriter;

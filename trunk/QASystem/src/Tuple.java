@@ -9,5 +9,6 @@ public class Tuple {
 		this.str = str;
 		this.startOffset = startOffset;
 		this.endOffset = endOffset;
+		this.score = score;
 	}
 }

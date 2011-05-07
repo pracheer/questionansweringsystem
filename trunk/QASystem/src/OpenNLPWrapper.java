@@ -1,8 +1,18 @@
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.HashMap;
 
+import opennlp.tools.chunker.Chunker;
+import opennlp.tools.chunker.ChunkerME;
+import opennlp.tools.chunker.ChunkerModel;
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTagger;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
 
@@ -36,6 +46,26 @@ public class OpenNLPWrapper {
 		
 		public NameFinderME getNameFinderME() {
 			return nameFinderME;
+		}
+	}
+	
+	public static void getChunks(String sentence) {
+		try {
+			InputStream modelIn = new FileInputStream("models/en-token.bin");
+			TokenizerModel model = new TokenizerModel(modelIn);
+			Tokenizer tokenizer = new TokenizerME(model);
+			POSModel posModel = new POSModel(new FileInputStream("models/en-pos-perceptron.bin"));
+			POSTagger tagger = new POSTaggerME(posModel);
+			String[] tokens = tokenizer.tokenize(sentence);
+			String[] tags = tagger.tag(tokens);
+			ChunkerModel chunkerModel = new ChunkerModel(new FileInputStream("models/en-chunker.bin"));
+			Chunker chuncker = new ChunkerME(chunkerModel);
+			String[] chunks = chuncker.chunk(tokens, tags);
+			for (int i = 0; i < tokens.length; i++) {
+			  System.out.println(String.format("%s %s %s", tokens[i], tags[i], chunks[i]));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -81,5 +111,8 @@ public class OpenNLPWrapper {
 		Span[] spans = type.getNameFinderME().find(words);
 		return getWordsfromSpans(words, spans);
 	}
-	
+
+	public static void main(String[] args) {
+		getChunks("Mr. Gupta is a very good boy and in good shape too");
+	}
 }

@@ -1,14 +1,13 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -28,7 +27,6 @@ public class QA {
 		try {
 
 			long startTime = System.currentTimeMillis();
-
 
 			boolean categorizeQues = 
 				Boolean.parseBoolean(QA.properties.getProperty("categorizeQuestions"));
@@ -68,20 +66,22 @@ public class QA {
 					if(qid%50==0)
 						System.out.println("finding answer for question:"+qid);
 
-					TreeMap<Float, Tuple> nes = new TreeMap<Float, Tuple>(Collections.reverseOrder());
-					
 					// consists of string as candidate answer and its tuple
 					HashMap<String, Tuple> tupleScoreMap = new HashMap<String, Tuple>();
 
-					for(int rank = 1; rank <= numDocs; rank++) {
-						File docDir = new File(reconcileDir, qid+"_"+rank);
+					HashSet<String> nesSet = new HashSet<String>();
+					
+					HashMap<String,String[]> queNes = OpenNLPWrapper.runAllNEs(
+							QAUtils.getWords(question.getString()));
 
-						if(!docDir.exists())
-							break;
-
-						File responseNPFile = new File(
-								docDir+File.separator+Constants.ANNOTATIONS_DIR, "responseNPs");
+					Set<String> keySet = queNes.keySet();
+					for (String key : keySet) {
+						String[] strings = queNes.get(key);
+						for (String str : strings) {
+							nesSet.add(str);
+						}
 					}
+					
 					
 					for(int rank = 1; rank <= numDocs; rank++) {
 
@@ -94,7 +94,7 @@ public class QA {
 						BufferedReader reader = new BufferedReader(new FileReader(txtFile));
 						StringBuffer buf = new StringBuffer();
 						String line;
-						float docScore = -1;
+						float docScore = 100/rank;
 						while(null!=(line=reader.readLine())) {
 							if(line.startsWith("Qid:")) {
 								docScore = Float.parseFloat(line.substring(line.indexOf("Score: ")+7, line.length()));
@@ -106,6 +106,8 @@ public class QA {
 						int maxScore = -1;
 						ArrayList<Tuple> sentences = QAUtils.getSentences(docDir, buf.toString());
 						for (Tuple sentence : sentences) {
+							if(sentence==null || sentence.str.isEmpty())
+								continue;
 							int score = QAUtils.getWordOverlap(question.getString(), sentence.str);
 							if(score > maxScore) {
 								maxScore = score;
@@ -126,16 +128,24 @@ public class QA {
 							entities = QAUtils.getNE(docDir, buf.toString(), 
 									sentence.startOffset, sentence.endOffset, neTypes);
 
-							updateTupleScores(tupleScoreMap, sentence, entities);
+							updateTupleScores(tupleScoreMap, sentence, entities, false, true);
 							
 							ArrayList<Question.NPSType> posTypes = question.getPosTypes();
 							entities = QAUtils.getNP(docDir, buf.toString(), 
 									sentence.startOffset, sentence.endOffset, posTypes);
 
-							updateTupleScores(tupleScoreMap, sentence, entities);
+							updateTupleScores(tupleScoreMap, sentence, entities, false, false);
 						}
+						
+						float corefScore = docScore;
+						
+						ArrayList<Tuple> entities = QAUtils.getCorefWords(docDir, buf.toString(), nesSet);
+						Tuple docTuple = new Tuple(buf.toString(), 0, buf.length(), corefScore);
+						updateTupleScores(tupleScoreMap, docTuple, entities, true, false);
 					}
-					sortTupleByScores(nes, tupleScoreMap);
+					
+					// contains all possible answers sorted by decreasing scores.
+					TreeMap<Float, Tuple> nes = sortTupleByScores(tupleScoreMap);
 					QAUtils.writeAnswers(ansWriter, qid, nes.values());
 				}
 				ansWriter.close();
@@ -151,25 +161,35 @@ public class QA {
 
 	}
 
-	private static void sortTupleByScores(TreeMap<Float, Tuple> nes,
-			HashMap<String, Tuple> tupleScoreMap) {
+	private static TreeMap<Float,Tuple> sortTupleByScores(HashMap<String, Tuple> tupleScoreMap) {
+		TreeMap<Float, Tuple> nes = new TreeMap<Float, Tuple>(Collections.reverseOrder());
 		Set<String> tupleStr = tupleScoreMap.keySet();
 		for (String string : tupleStr) {
 			Tuple tuple = tupleScoreMap.get(string);
 			nes.put(tuple.score, tuple);
 		}
+		return nes;
 	}
 
 	private static void updateTupleScores(HashMap<String, Tuple> tupleScoreMap,
-			Tuple sentence, ArrayList<Tuple> entities) {
+			Tuple sentence, ArrayList<Tuple> entities, boolean addScore, boolean namedEntity) {
 		for (Tuple tuple : entities) {
+			float score = sentence.score;
+			
+			// giving more weightage to named Entities.
+			if(namedEntity)
+				score *= 1.2;
+			
 			if(!tupleScoreMap.containsKey(tuple.str)) {
-				tuple.score = sentence.score;
+				tuple.score = score;
 				tupleScoreMap.put(tuple.str, tuple);
 			}
 			else {
 				Tuple oldTuple = tupleScoreMap.get(tuple.str);
-				tuple.score = /*oldTuple.score/2+*/sentence.score;
+				if(addScore)
+					tuple.score = oldTuple.score+score;
+				else
+					tuple.score = /*oldTuple.score/2+*/score;
 				tupleScoreMap.put(tuple.str, tuple);
 			}
 		}
