@@ -34,6 +34,7 @@ public class QA {
 			int numDocs = 
 				Integer.parseInt(QA.properties.getProperty("numDocs"));
 
+			boolean nextSentence = Boolean.parseBoolean(properties.getProperty("nextSentence"));
 			File questionsDir = new File(properties.getProperty("questionsDir"));
 			String[] queFiles = properties.getProperty("questionsFile").split(";");
 			File answersDir = new File(properties.getProperty("answersDir"));
@@ -102,10 +103,11 @@ public class QA {
 							buf.append(line+" ");
 						}
 
-						ArrayList<Tuple> answerSentences = new ArrayList<Tuple>();
+						HashSet<Tuple> answerSentences = new HashSet<Tuple>();
 						int maxScore = -1;
 						ArrayList<Tuple> sentences = QAUtils.getSentences(docDir, buf.toString());
-						for (Tuple sentence : sentences) {
+						for (int s = 0; s< sentences.size(); s++) {
+							Tuple sentence = sentences.get(s);
 							if(sentence==null || sentence.str.isEmpty())
 								continue;
 							int score = QAUtils.getWordOverlap(question.getString(), sentence.str);
@@ -114,10 +116,22 @@ public class QA {
 								answerSentences.clear();
 								sentence.score = docScore*score;
 								answerSentences.add(sentence);
+								if(nextSentence && s < sentences.size()-1) {
+									Tuple nextSent = sentences.get(s+1);
+									int nextScore = QAUtils.getWordOverlap(question.getString(), sentence.str);
+									nextSent.score = docScore*nextScore;
+									answerSentences.add(nextSent);
+								}
 							}
 							else if(score == maxScore) {
 								sentence.score = docScore*score;
 								answerSentences.add(sentence);
+								if(nextSentence && s < sentences.size()-1) {
+									Tuple nextSent = sentences.get(s+1);
+									int nextScore = QAUtils.getWordOverlap(question.getString(), sentence.str);
+									nextSent.score = docScore*nextScore;
+									answerSentences.add(nextSent);
+								}
 							}
 						}
 
@@ -135,6 +149,19 @@ public class QA {
 									sentence.startOffset, sentence.endOffset, posTypes);
 
 							updateTupleScores(tupleScoreMap, sentence, entities, false, false);
+							if(tupleScoreMap.size() == 0) {
+								
+								QAUtils.getDefaultTypes(neTypes, posTypes);
+								
+								entities = QAUtils.getNE(docDir, buf.toString(), 
+										sentence.startOffset, sentence.endOffset, neTypes);
+								updateTupleScores(tupleScoreMap, sentence, entities, false, true);
+								
+								entities = QAUtils.getNP(docDir, buf.toString(), 
+										sentence.startOffset, sentence.endOffset, posTypes);
+								updateTupleScores(tupleScoreMap, sentence, entities, false, false);
+								
+							}
 						}
 						
 						float corefScore = docScore;

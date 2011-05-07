@@ -102,10 +102,15 @@ public class Question {
 			else if(question.contains("what")) {
 				qWriter = whatWriter;
 
-				if(cheating && question.contains("population")) 
+				if(cheating && (question.contains("population") || 
+						question.contains("number") || 
+						question.contains("count"))) 
 					posTypes.add(NPSType.NUM);	// no effect.
 				else if(cheating && question.contains("time")){					
 					namedEntityTypes.add(NEType.TIME);
+				}
+				else if(cheating && (question.contains("date")||question.contains("year"))) {
+					namedEntityTypes.add(NEType.DATE);
 				}
 				else {
 //				posTypes.add(NPSType.NNP);	// 0.039 61 not answered.
@@ -122,9 +127,9 @@ public class Question {
 //				namedEntityTypes.add(NEType.PERSON);// no effect
 //				namedEntityTypes.add(NEType.LOCN);// 0.076 58 NA
 //				namedEntityTypes.add(NEType.)
-//				for(NEType neType : NEType.values()) {
-//					namedEntityTypes.add(neType);
-//				}
+					for(NEType neType : NEType.values()) {
+						namedEntityTypes.add(neType);
+					}
 				}
 			}
 			else if (question.contains("which")) {
