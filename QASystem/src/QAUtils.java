@@ -404,7 +404,7 @@ public class QAUtils {
 			HashSet<String> arrayList = corefs.get(corefID);
 			for (String word : arrayList) {
 				corefWords.put(word, arrayList);
-				System.out.println(word+":"+arrayList);
+//				System.out.println(word+":"+arrayList);
 			}
 		}
 
@@ -436,5 +436,17 @@ public class QAUtils {
 			}
 		}
 		return tuples;
+	}
+
+	public static void getDefaultTypes(ArrayList<Question.NEType> neTypes,
+			ArrayList<Question.NPSType> posTypes) {
+		neTypes.add(Question.NEType.DATE);
+		neTypes.add(Question.NEType.LOCN);
+		neTypes.add(Question.NEType.PERSON);
+		
+		posTypes.add(Question.NPSType.NP);
+		posTypes.add(Question.NPSType.NUM);
+		posTypes.add(Question.NPSType.NP);
+
 	}
 }
